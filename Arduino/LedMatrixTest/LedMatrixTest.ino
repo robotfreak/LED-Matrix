@@ -75,7 +75,7 @@ int LedMatrix_getPixel(int x, int y)
   int val = 0;
   if (y < MTX_ROWS && x < MTX_COLS && y >= 0 && x >= 0)
   {
-    if (ledMtx[x] | (1 << y)) val = 1;
+    if (ledMtx[x] & (1 << y)) val = 1;
   }
   return val;
 }
@@ -112,8 +112,8 @@ void LedMatrix_shiftOut(int row)
         {
           bitSet(val, x);
         }
-        SPI.transfer (val);
       }
+      SPI.transfer (val);
     }
   }
 
@@ -149,13 +149,13 @@ void setup() {
 int i = 0;
 
 void loop() {
-  if (i== 1000 || i == 3000)
+  if (i== 100 || i == 300)
     LedMatrix_setBuffer(ON);
-  else if (i == 2000 ||i == 4000)  
+  else if (i == 200 ||i == 400)  
     LedMatrix_setBuffer(OFF);
    
   LedMatrix_update();
   i++;
-  if (i>4000) i = 0;
+  if (i>400) i = 0;
 
 }
