@@ -146,16 +146,16 @@ void setup() {
 
 }
 
+int i = 0;
+
 void loop() {
-  // put your main code here, to run repeatedly:
-  int i;
-
-  //for(i=0; i<10000)
-
-  LedMatrix_setBuffer(ON);
+  if (i== 1000 || i == 3000)
+    LedMatrix_setBuffer(ON);
+  else if (i == 2000 ||i == 4000)  
+    LedMatrix_setBuffer(OFF);
+   
   LedMatrix_update();
-  LedMatrix_setBuffer(OFF);
-  LedMatrix_update();
-
+  i++;
+  if (i>4000) i = 0;
 
 }
