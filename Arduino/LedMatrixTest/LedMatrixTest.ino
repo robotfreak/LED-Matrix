@@ -32,7 +32,7 @@ void LedMatrix_setRow(int row)
   {
     if (i != row)
     {
-      digitalWrite(rowPins[i], HIGH);
+      digitalWrite(rowPins[i], LOW);
     }
   }
 
@@ -40,22 +40,22 @@ void LedMatrix_setRow(int row)
   {
     if (i == row)
     {
-      digitalWrite(rowPins[i], LOW);
+      digitalWrite(rowPins[i], HIGH);
     }
   }
 }
 
 void LedMatrix_setBuffer(int color)
 {
-  int x,y;
-  for(x=0; x<MTX_COLS; x++)
+  int x, y;
+  for (x = 0; x < MTX_COLS; x++)
   {
-    for(y=0; y<MTX_ROWS; y++)
+    for (y = 0; y < MTX_ROWS; y++)
     {
-      LedMatrix_setPixel(x,y,color);
+      LedMatrix_setPixel(x, y, color);
     }
   }
-//  memset(ledMtx, color, sizeof(ledMtx));
+  //  memset(ledMtx, color, sizeof(ledMtx));
 }
 
 void LedMatrix_setPixel(int x, int y, int color)
@@ -81,6 +81,19 @@ int LedMatrix_getPixel(int x, int y)
 }
 
 
+void ledMatrix_printLedMtx() {
+  int x, y;
+  unsigned char w;
+
+  w = 1;   // most right bit set
+  for (y = 0; y < MTX_ROWS; y++) {
+    for (x = 0; x < MTX_COLS; x++) {
+      if (ledMtx[x] & w) Serial.print("#"); else Serial.print(".");
+    }
+    w = w << 1;
+    Serial.println("");
+  }
+}
 
 void LedMatrix_begin(void)
 {
@@ -91,6 +104,12 @@ void LedMatrix_begin(void)
   pinMode(oePin, OUTPUT);
   digitalWrite(strobePin, LOW);
   digitalWrite(MTX_ROWS, HIGH);
+
+  for (i = 0; i < MTX_ROWS; i++)
+  {
+    pinMode(rowPins[i], OUTPUT);
+  }
+
   LedMatrix_setRow(-1);
   LedMatrix_setBuffer(OFF);
 }
@@ -98,19 +117,21 @@ void LedMatrix_begin(void)
 
 void LedMatrix_shiftOut(int row)
 {
-  int i, p, x, val;
-  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE1));
+  int i, j, p, x, y, val;
+  SPI.beginTransaction(SPISettings(400000, LSBFIRST, SPI_MODE1));
+  y = 1 << row;
   for (p = 0; p < PANEL_NUM; p++)
   {
     val = 0;
     for (i = 0; i < 8; i++)
     {
       val = 0;
-      for (x = 0; x < 8; x++)
+      for (j = 0; j < 8; j++)
       {
-        if (LedMatrix_getPixel(p * PANEL_SIZE + i * 8 + x, row))
+        x = 163 - (p * PANEL_SIZE + i * 8 + j);
+        if (ledMtx[x] & y)
         {
-          bitSet(val, x);
+          val |= (1 << j);
         }
       }
       SPI.transfer (val);
@@ -137,25 +158,45 @@ void LedMatrix_update(void)
     LedMatrix_shiftOut(row);
     delay(1);
   }
+ // ledMatrix_printLedMtx();
 }
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
   LedMatrix_begin();
   LedMatrix_update();
 
 }
 
 int i = 0;
+int x = 0;
+int y = 0;
+int val = ON;
 
 void loop() {
-  if (i== 100 || i == 300)
-    LedMatrix_setBuffer(ON);
-  else if (i == 200 ||i == 400)  
-    LedMatrix_setBuffer(OFF);
-   
+
+
+  if (i % 10 == 0)
+  {
+    LedMatrix_setPixel(x, y, val);
+    x++;
+    if (x > 50)
+    {
+      x = 0;
+      y++;
+      if (y >= 7) {
+        y = 0;
+        if (val == ON)
+          val = OFF;
+        else
+          val = ON;
+      }
+    }
+  }
+
   LedMatrix_update();
   i++;
-  if (i>400) i = 0;
+  //if (i>400) i = 0;
 
 }
