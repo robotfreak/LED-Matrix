@@ -6,6 +6,7 @@
 
 #include "LedMatrix.h"
 #include "font3x5.h"
+#include "font5x7.h"
 
 //================== Constants ===============================
 #define X_SIZE MTX_COLS    // 115 column
@@ -169,12 +170,18 @@ int printString(int xOffs, int yOffs, int color, int size, String s) {
   while ((i < s.length()) && (i < 100)) {
     switch (size) {
       case XSMALL:
-      case SMALL:
-      case LARGE:
-      case MEDIUM:
         x = printChar3x5(x, y, color, s.charAt(i));
         break;
-      default: x = printChar3x5(x, y, color, s[i]);
+      case SMALL:
+        x = printChar3x5(x, y, color, s.charAt(i));
+        break;
+      case LARGE:
+        x = printChar5x7(x, y, color, s.charAt(i));
+        break;
+      case MEDIUM:
+        x = printChar5x7(x, y, color, s.charAt(i));
+        break;
+      default: x = printChar5x7(x, y, color, s[i]);
     }
     //Serial.print(s.charAt(i));
     i++;
@@ -239,7 +246,6 @@ int getFrameBuffer(int x, int y) {
 // color = ON means yellow, OFF means black
 // c = ASCII Character
 // returns new x position
-
 //============================================
 int printChar3x5(int xOffs, int yOffs, int color, unsigned char c)
 {
@@ -256,6 +262,25 @@ int printChar3x5(int xOffs, int yOffs, int color, unsigned char c)
     }
   }
   return (xOffs + 4);
+}
+
+int printChar5x7(int xOffs, int yOffs, int color, unsigned char c)
+{
+  unsigned char x, y, w, ctmp;
+  ctmp = c - 32;
+  for (x = 0; x < 5; x++)
+  {
+    w = pgm_read_byte(&(font5x7[ctmp][x]));
+    for (y = 0; y < 8; y++)
+    {
+      if (w & 1)
+        setFrameBuffer(x + xOffs, y + yOffs, color);
+      else
+        setFrameBuffer(x + xOffs, y + yOffs, !color);
+      w = w >> 1;
+    }
+  }
+  return (xOffs + 6);
 }
 
 
