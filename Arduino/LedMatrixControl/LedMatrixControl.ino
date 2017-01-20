@@ -45,6 +45,15 @@ int i, j;
 int inByte;
 String commandLine;
 
+#define TXT_BUF_SIZ 64
+#define SCROLL_TIME 10
+
+char textBuf[TXT_BUF_SIZ];
+int textBufLen;
+bool scroll = false;
+int scrollDelay = SCROLL_TIME;
+int xoff;
+
 void setup() {
 
   Serial.begin(115200);
@@ -61,6 +70,7 @@ void loop() {
   int xSiz, ySiz;
   char fontSize;
   int fsize;
+
 
   String xStr, yStr;
   String xSizStr, ySizStr;
@@ -156,6 +166,7 @@ void loop() {
         Serial.println(fontSize);
       }
       Serial.println(outputString);
+      scroll = false;
 
       // ======= Execute the respective command ========
       switch (cmd) {
@@ -171,6 +182,23 @@ void loop() {
     }
     LedMatrix_update();
   }
+  if(scroll == true)
+  {
+    if (scrollDelay) scrollDelay--;
+    else {
+      for(i=0;i<textBufLen*5; i++)
+      {
+        for(j=0;j<textBufLen;j++)
+        {
+          printChar(xoff+j*6, 0, color, LARGE, textBuf[j]);
+          shiftFrameBuffer();
+          scrollDelay = SCROLL_TIME;
+          LedMatrix_update();
+        }
+        xoff--;
+      }
+    }
+  }
   LedMatrix_update();
 }
 
@@ -184,7 +212,7 @@ void printTest(int m) {
   clearFrameBuffer(OFF);
   if (m == 0)
   {
-    i = printString(1, 1, ON, XSMALL, "ABCDEFGHIJKLM");
+    i = printString(0, 0, ON, LARGE, "ABCDEFGHIJKLM");
   }
   else if (m == 1)
   {
@@ -206,5 +234,13 @@ void printTest(int m) {
       vLine(x,ON);
     for(y=0; y<MTX_ROWS; y+=2) 
       hLine(y,ON);
+  }
+  if (m == 4)
+  {
+    strcpy(textBuf, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    i = printString(0, 0, ON, LARGE, textBuf );
+    textBufLen = 24;
+    xoff = MTX_COLS;
+    scroll = true;
   }
 }

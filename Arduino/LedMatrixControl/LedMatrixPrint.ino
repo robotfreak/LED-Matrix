@@ -189,6 +189,34 @@ int printString(int xOffs, int yOffs, int color, int size, String s) {
   return (x);
 }
 
+int printChar(int xOffs, int yOffs, int color, int size, char c) {
+  int i, x, y;
+
+  i = 0;
+  x = xOffs;
+  y = yOffs;
+
+  if (size == SMALL) x = xOffs - 2; // Somehow I need to shift the text to the left
+
+    switch (size) {
+      case XSMALL:
+        x = printChar3x5(x, y, color, c);
+        break;
+      case SMALL:
+        x = printChar3x5(x, y, color, c);
+        break;
+      case LARGE:
+        x = printChar5x7(x, y, color, c);
+        break;
+      case MEDIUM:
+        x = printChar5x7(x, y, color, c);
+        break;
+      default: x = printChar5x7(x, y, color, c);
+    }
+  return (x);
+}
+
+
 
 //###################### Internal Functions ##########################################
 
@@ -235,6 +263,15 @@ int getFrameBuffer(int x, int y) {
   return value;
 }
 
+void shiftFrameBuffer(void) {
+  unsigned char x;
+  
+  for (x = 0; x < X_SIZE-1; x++) {
+    frameBuffer[x] = frameBuffer[x+1];
+  }
+  LedMatrix_copy(frameBuffer);
+  return 0;
+}
 
 //============================================
 // printChar6x8(int xOffs, int yOffs, char c)

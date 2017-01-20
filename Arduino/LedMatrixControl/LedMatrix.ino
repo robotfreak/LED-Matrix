@@ -74,6 +74,15 @@ int LedMatrix_getPixel(int x, int y)
   return val;
 }
 
+void LedMatrix_copy(unsigned char *buf)
+{
+  int x;
+  for (x=0; x < MTX_COLS ; x++)
+  {
+    ledMtx[x] = *(buf+x);
+  }
+}
+
 void LedMatrix_printLedMtx() {
   int x, y;
   unsigned char w;
