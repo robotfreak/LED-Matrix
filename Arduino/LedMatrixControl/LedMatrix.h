@@ -8,7 +8,7 @@
 #endif 
 
 #define PANEL_SIZE 50
-#define PANEL_NUM  1
+#define PANEL_NUM  3
 #define MTX_COLS   (PANEL_SIZE*PANEL_NUM)
 #define MTX_ROWS   7
 

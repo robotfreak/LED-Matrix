@@ -270,7 +270,6 @@ void shiftFrameBuffer(void) {
     frameBuffer[x] = frameBuffer[x+1];
   }
   LedMatrix_copy(frameBuffer);
-  return 0;
 }
 
 //============================================

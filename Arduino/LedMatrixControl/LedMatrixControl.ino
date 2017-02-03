@@ -9,7 +9,7 @@
 // they can be easily created by scripts
 //
 // Command format
-//   <Command>,<Color>,<x>,<y>,<size>,<....string....>\n
+//   <Command>,<Color>,<x>,<y>,<size>,<....string....>\
 //
 //   Commands:
 //     C  Clear Screen
@@ -34,7 +34,7 @@
 //   String:
 //     Contains the characters to be printed
 //   "\":
-//     The command lines is terminated by the return character
+//     The command lines is terminated by the \ character
 //     It gets evaluated after reception of that character
 //
 ////////////////////////////////////////////////////////////////////////////
@@ -57,6 +57,7 @@ int xoff;
 void setup() {
 
   Serial.begin(115200);
+  showHelp();
   LedMatrix_begin();
   LedMatrix_update();
 }
@@ -188,21 +189,61 @@ void loop() {
     else {
       for(i=0;i<textBufLen*5; i++)
       {
+        scrollDelay = SCROLL_TIME;
         for(j=0;j<textBufLen;j++)
         {
-          printChar(xoff+j*6, 0, color, LARGE, textBuf[j]);
-          shiftFrameBuffer();
-          scrollDelay = SCROLL_TIME;
+          if (scrollDelay) scrollDelay--;
+          else {
+            scrollDelay = SCROLL_TIME;
+            //if(i%6==0)
+            //  printChar(xoff-6, 0, color, LARGE, textBuf[j]);
+            shiftFrameBuffer();
+          }
           LedMatrix_update();
         }
-        xoff--;
       }
+      scroll=false;
     }
   }
   LedMatrix_update();
 }
 
-
+void showHelp(void)
+{
+  Serial.println("LED Matrix Control v0.3");
+  Serial.println("-----------------------");
+  Serial.println("Command format");
+  Serial.println("<Command>,<Color>,<x>,<y>,<size>,[<xsize>,<ysize>]<....string....>\\\n");
+//
+  Serial.println("Commands:");
+  Serial.println("  C  Clear Screen");
+  Serial.println("  B  Draw a Bitmap");
+  Serial.println("  P  Print Text");
+  Serial.println("  H  Draw a horizontal line");
+  Serial.println("  V  Draw a vertical line");
+  Serial.println("  S  Set a pixel");
+  Serial.println("  U  Update Panel");
+  Serial.println("Color:");
+  Serial.println("  B  Black");
+  Serial.println("  Y  Yellow");
+  Serial.println("X,Y:");
+  Serial.println("  Required for all Print commands");
+  Serial.println("  Only Y is required for the horizontal line command \"H\"");
+  Serial.println("  Only X is required for the vertical line command \"V\"");
+  Serial.println("size:");
+  Serial.println("  Not required for Bitmap commands");
+  Serial.println("  S SMALL");
+  Serial.println("  M MEDIUM");
+  Serial.println("  L LARGE");
+  Serial.println("  X EXTRALARGE");
+  Serial.println("XSize,YSize:");
+  Serial.println("  Required only for Bitmap commands");
+  Serial.println("String:");
+  Serial.println("  Contains the characters to be printed");
+  Serial.println("\\:");
+  Serial.println("  The command lines is terminated by the \\ character");
+  Serial.println("  It gets evaluated after reception of that character");
+}
 //===================================
 // For debugging and testing only
 //===================================
@@ -216,10 +257,13 @@ void printTest(int m) {
   }
   else if (m == 1)
   {
-    i = printBitmap( 2, 1, ON, 4, 4, "09000906");
-    i = printBitmap(12, 1, ON, 4, 4, "09000609");
-    i = printBitmap(22, 1, ON, 4, 4, "09000f00");
-    i = printBitmap(32, 1, ON, 5, 5, "0A1F1F0E04");
+    i = printBitmap( 1, 1, ON, 4, 4, "09000906");
+    i = printBitmap( 6, 1, ON, 4, 4, "09000609");
+    i = printBitmap(12, 1, ON, 4, 4, "09000f00");
+    i = printBitmap(18, 1, ON, 5, 5, "0A1F1F0E04");
+    i = printBitmap(25, 0, ON, 7, 7, "AA55AA55AA55AA");
+    i = printBitmap(33, 0, ON, 7, 7, "AAFFAAFFAAFFAA");
+    i = printBitmap(41, 0, ON, 8, 7, "82442810284482");
   }
   else if (m == 2)
   {
@@ -240,7 +284,8 @@ void printTest(int m) {
     strcpy(textBuf, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     i = printString(0, 0, ON, LARGE, textBuf );
     textBufLen = 24;
-    xoff = MTX_COLS;
+    xoff = textBufLen*6;
+    scrollDelay = 100;
     scroll = true;
   }
 }
