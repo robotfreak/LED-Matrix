@@ -45,14 +45,15 @@ int i, j;
 int inByte;
 String commandLine;
 
-#define TXT_BUF_SIZ 64
+#define TXT_BUF_SIZ 140
 #define SCROLL_TIME 10
 
 char textBuf[TXT_BUF_SIZ];
 int textBufLen;
-bool scroll = false;
+bool scroll = true;
 int scrollDelay = SCROLL_TIME;
 int xoff;
+int mode = 0;
 
 void setup() {
 
@@ -60,6 +61,7 @@ void setup() {
   showHelp();
   LedMatrix_begin();
   LedMatrix_update();
+  
 }
 
 void loop() {
@@ -80,7 +82,8 @@ void loop() {
   if (Serial.available() > 0) {
     c = Serial.read();
     if (commandLine.length() < 100) {
-      commandLine += c;
+      if (c != '\r')
+        commandLine += c;
     }
     else {
       commandLine = "";
@@ -88,7 +91,7 @@ void loop() {
     }
 
     // ==== If command string is complete... =======
-    if (c == '\\') {
+    if (c == '\n' && commandLine.length() > 1) {
 
       cmd = commandLine.charAt(0);
       if (commandLine.charAt(2) == 'Y') color = 1; else color = 0;
@@ -166,9 +169,11 @@ void loop() {
         Serial.print("font: ");
         Serial.println(fontSize);
       }
-      Serial.println(outputString);
-      scroll = false;
-
+      if (outputString != "")
+      {
+        Serial.println(outputString);
+        scroll = false;
+      }
       // ======= Execute the respective command ========
       switch (cmd) {
         case 'C':  clearFrameBuffer(color); Serial.println("C"); break;
@@ -176,21 +181,21 @@ void loop() {
         case 'S':  setPixel(xVal, yVal, color); break;
         case 'H':  hLine(yVal, color); Serial.println("H"); break;
         case 'V':  vLine(xVal, color); Serial.println("V"); break;
-        case 'P':  printString(xVal, yVal, color, fsize, outputString); Serial.println("P");  break;
+        case 'P':  scrollText(outputString); Serial.println("P"); break; //printString(xVal, yVal, color, fsize, outputString); Serial.println("P");  break;
         case 'B':  printBitmap(xVal, yVal, color, xSiz, ySiz, outputString); Serial.println("B"); break;
         case 'U':  updatePanel(); Serial.println("U"); break;
       }
     }
     LedMatrix_update();
   }
-  if(scroll == true)
+  if (scroll == true)
   {
     if (scrollDelay) scrollDelay--;
     else {
-      for(i=0;i<textBufLen*5; i++)
+      for (i = 0; i < textBufLen * 5; i++)
       {
         scrollDelay = SCROLL_TIME;
-        for(j=0;j<textBufLen;j++)
+        for (j = 0; j < textBufLen; j++)
         {
           if (scrollDelay) scrollDelay--;
           else {
@@ -202,7 +207,27 @@ void loop() {
           LedMatrix_update();
         }
       }
-      scroll=false;
+      switch(mode)
+      {
+        case 0:
+         scrollText("Tech Jam Berlin 2017");
+        break;
+        case 1:
+         scrollText("@roboterfreak");
+        break;
+        case 2:
+         scrollText("robotfreak.de/blog");
+        break;
+        case 3:
+         scrollText("photofreak.de");
+        break;
+        default:
+          mode = 0;
+        break;
+      }
+      mode ++;
+      if (mode == 4)
+        mode = 0;
     }
   }
   LedMatrix_update();
@@ -213,8 +238,8 @@ void showHelp(void)
   Serial.println("LED Matrix Control v0.3");
   Serial.println("-----------------------");
   Serial.println("Command format");
-  Serial.println("<Command>,<Color>,<x>,<y>,<size>,[<xsize>,<ysize>]<....string....>\\\n");
-//
+  Serial.println("<Command>,<Color>,<x>,<y>,<size>,[<xsize>,<ysize>]<....string....>\\\\n");
+  //
   Serial.println("Commands:");
   Serial.println("  C  Clear Screen");
   Serial.println("  B  Draw a Bitmap");
@@ -240,16 +265,29 @@ void showHelp(void)
   Serial.println("  Required only for Bitmap commands");
   Serial.println("String:");
   Serial.println("  Contains the characters to be printed");
-  Serial.println("\\:");
+  Serial.println("\\n:");
   Serial.println("  The command lines is terminated by the \\ character");
   Serial.println("  It gets evaluated after reception of that character");
 }
+
+void scrollText(String str)
+{
+  strcpy(textBuf, str.c_str());
+  textBufLen = str.length();
+  i = printString(0, 0, ON, LARGE, str );
+  xoff = textBufLen * 6;
+  scrollDelay = 100;
+  scroll = true;
+
+}
+
+
 //===================================
 // For debugging and testing only
 //===================================
 void printTest(int m) {
-  int x,y;
-  
+  int x, y;
+
   clearFrameBuffer(OFF);
   if (m == 0)
   {
@@ -267,24 +305,24 @@ void printTest(int m) {
   }
   else if (m == 2)
   {
-    vLine(0,ON);
-    vLine(49,ON);
-    hLine(0,ON);
-    hLine(6,ON);
+    vLine(0, ON);
+    vLine(49, ON);
+    hLine(0, ON);
+    hLine(6, ON);
   }
   else if (m == 3)
   {
-    for(x=0; x<MTX_COLS; x+=2) 
-      vLine(x,ON);
-    for(y=0; y<MTX_ROWS; y+=2) 
-      hLine(y,ON);
+    for (x = 0; x < MTX_COLS; x += 2)
+      vLine(x, ON);
+    for (y = 0; y < MTX_ROWS; y += 2)
+      hLine(y, ON);
   }
   if (m == 4)
   {
-    strcpy(textBuf, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    strcpy(textBuf, "@roboterfreak");
     i = printString(0, 0, ON, LARGE, textBuf );
     textBufLen = 24;
-    xoff = textBufLen*6;
+    xoff = textBufLen * 6;
     scrollDelay = 100;
     scroll = true;
   }
