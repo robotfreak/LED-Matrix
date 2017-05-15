@@ -294,6 +294,8 @@ int printChar3x5(int xOffs, int yOffs, int color, unsigned char c)
     {
       if (w & 1)
         setFrameBuffer(6 - x + xOffs, y + yOffs, color);
+      else
+        setFrameBuffer(6 - x + xOffs, y + yOffs, !color);
       w = w >> 1;
     }
   }

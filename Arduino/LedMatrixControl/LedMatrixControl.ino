@@ -45,23 +45,29 @@ int i, j;
 int inByte;
 String commandLine;
 
-#define TXT_BUF_SIZ 140
+#define TXT_BUF_SIZ 145
 #define SCROLL_TIME 10
 
 char textBuf[TXT_BUF_SIZ];
 int textBufLen;
-bool scroll = true;
+bool scroll = false;
 int scrollDelay = SCROLL_TIME;
 int xoff;
 int mode = 0;
+int fdMode = 0;
+int fdState = 0;
+unsigned long current_time;
+unsigned long last_time;
 
 void setup() {
 
   Serial.begin(115200);
-  showHelp();
+  Serial.println("LED Matrix Control v0.4");
+  //showHelp();
   LedMatrix_begin();
   LedMatrix_update();
-  
+  fdMode = 1;
+
 }
 
 void loop() {
@@ -81,7 +87,7 @@ void loop() {
 
   if (Serial.available() > 0) {
     c = Serial.read();
-    if (commandLine.length() < 100) {
+    if (commandLine.length() < 160) {
       if (c != '\r')
         commandLine += c;
     }
@@ -181,17 +187,22 @@ void loop() {
         case 'S':  setPixel(xVal, yVal, color); break;
         case 'H':  hLine(yVal, color); Serial.println("H"); break;
         case 'V':  vLine(xVal, color); Serial.println("V"); break;
-        case 'P':  scrollText(outputString); Serial.println("P"); break; //printString(xVal, yVal, color, fsize, outputString); Serial.println("P");  break;
+        case 'P':  if (outputString.length() < 26) scrollText(outputString);
+          else printString(xVal, yVal, color, fsize, outputString);
+          Serial.println("P");  break;
         case 'B':  printBitmap(xVal, yVal, color, xSiz, ySiz, outputString); Serial.println("B"); break;
         case 'U':  updatePanel(); Serial.println("U"); break;
       }
+      printFrameBuffer();
     }
     LedMatrix_update();
   }
+
   if (scroll == true)
   {
     if (scrollDelay) scrollDelay--;
-    else {
+    else
+    {
       for (i = 0; i < textBufLen * 5; i++)
       {
         scrollDelay = SCROLL_TIME;
@@ -207,32 +218,75 @@ void loop() {
           LedMatrix_update();
         }
       }
-      switch(mode)
-      {
-        case 0:
-         scrollText("Tech Jam Berlin 2017");
+      scroll = false;
+    }
+  }
+  else
+  {
+    switch (fdMode)
+    {
+      case 1:
+        printNews();
         break;
-        case 1:
-         scrollText("@roboterfreak");
+      default:
         break;
-        case 2:
-         scrollText("robotfreak.de/blog");
-        break;
-        case 3:
-         scrollText("photofreak.de");
-        break;
-        default:
-          mode = 0;
-        break;
-      }
-      mode ++;
-      if (mode == 4)
-        mode = 0;
     }
   }
   LedMatrix_update();
 }
 
+void scrollText(String str)
+{
+  strcpy(textBuf, str.c_str());
+  textBufLen = str.length();
+  i = printString(0, 0, ON, LARGE, str );
+  printFrameBuffer();
+  xoff = textBufLen * 6;
+  scrollDelay = 100;
+  scroll = true;
+}
+
+void printNews() {
+  static unsigned long previousMillis = 0;        // will store last time from update
+
+  unsigned long currentMillis = millis();
+  String str;
+
+  if (currentMillis - previousMillis >= 30000) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    clearFrameBuffer(OFF);
+    switch (fdState)
+    {
+      case 0:
+        Serial.println(" Maker Faire Berlin 2017");
+        i = printString(0, 0, ON, XLARGE, " Maker Faire Berlin 2017");
+        printFrameBuffer();
+        fdState++;
+        break;
+      case 1:
+        Serial.println(" eLAB Makerspace Berlin");
+        i = printString(0, 0, ON, XLARGE, " eLAB Makerspace Berlin");
+        printFrameBuffer();
+        fdState++;
+        break;
+      case 2:
+        Serial.println("http://elab.in-berlin.de");
+        i = printString(0, 0, ON, XLARGE, "http://elab.in-berlin.de");
+        printFrameBuffer();
+        fdState = 0;
+        break;
+      default:
+        fdState = 0;
+        break;
+
+    }
+    LedMatrix_update();
+  }
+
+}
+
+#if 0
 void showHelp(void)
 {
   Serial.println("LED Matrix Control v0.3");
@@ -269,17 +323,7 @@ void showHelp(void)
   Serial.println("  The command lines is terminated by the \\ character");
   Serial.println("  It gets evaluated after reception of that character");
 }
-
-void scrollText(String str)
-{
-  strcpy(textBuf, str.c_str());
-  textBufLen = str.length();
-  i = printString(0, 0, ON, LARGE, str );
-  xoff = textBufLen * 6;
-  scrollDelay = 100;
-  scroll = true;
-
-}
+#endif
 
 
 //===================================
