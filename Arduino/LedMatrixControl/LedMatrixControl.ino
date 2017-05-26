@@ -9,7 +9,7 @@
 // they can be easily created by scripts
 //
 // Command format
-//   <Command>,<Color>,<x>,<y>,<size>,<....string....>\
+//   <Command>,<Color>,<x>,<y>,<size>,<....string....>\n
 //
 //   Commands:
 //     C  Clear Screen
@@ -33,8 +33,8 @@
 //     X EXTRALARGE
 //   String:
 //     Contains the characters to be printed
-//   "\":
-//     The command lines is terminated by the \ character
+//   "\n":
+//     The command lines is terminated by the '\n' new line character
 //     It gets evaluated after reception of that character
 //
 ////////////////////////////////////////////////////////////////////////////
@@ -44,15 +44,15 @@
 int i, j;
 int inByte;
 String commandLine;
+String outputString;
 
-#define TXT_BUF_SIZ 145
+#define TXT_BUF_SIZ 150
 #define SCROLL_TIME 10
 
 char textBuf[TXT_BUF_SIZ];
 int textBufLen;
 bool scroll = false;
 int scrollDelay = SCROLL_TIME;
-int xoff;
 int mode = 0;
 int fdMode = 0;
 int fdState = 0;
@@ -83,7 +83,6 @@ void loop() {
 
   String xStr, yStr;
   String xSizStr, ySizStr;
-  String outputString;
 
   if (Serial.available() > 0) {
     c = Serial.read();
@@ -187,7 +186,7 @@ void loop() {
         case 'S':  setPixel(xVal, yVal, color); break;
         case 'H':  hLine(yVal, color); Serial.println("H"); break;
         case 'V':  vLine(xVal, color); Serial.println("V"); break;
-        case 'P':  if (outputString.length() < 26) scrollText(outputString);
+        case 'P':  if (outputString.length() > 25) scrollText(outputString);
           else printString(xVal, yVal, color, fsize, outputString);
           Serial.println("P");  break;
         case 'B':  printBitmap(xVal, yVal, color, xSiz, ySiz, outputString); Serial.println("B"); break;
@@ -203,22 +202,40 @@ void loop() {
     if (scrollDelay) scrollDelay--;
     else
     {
-      for (i = 0; i < textBufLen * 5; i++)
+      //      for (i = 0; i < textBufLen * 5; i++)
       {
         scrollDelay = SCROLL_TIME;
+        Serial.print("scroll ");
+        Serial.println(textBufLen, DEC);
         for (j = 0; j < textBufLen; j++)
         {
-          if (scrollDelay) scrollDelay--;
-          else {
-            scrollDelay = SCROLL_TIME;
-            //if(i%6==0)
-            //  printChar(xoff-6, 0, color, LARGE, textBuf[j]);
-            shiftFrameBuffer();
+          //if (scrollDelay) scrollDelay--;
+          //else
+          {
+            for (i = 0; i < 6; i++)
+            {
+              scrollDelay = SCROLL_TIME;
+              if (i == 0) {
+
+                if ((j + 25) < textBufLen )
+                  c = textBuf[j + 25];
+                else
+                  c = ' ';
+
+                printChar(MTX_COLS, 0, 1, LARGE, c);
+                printChar(MTX_COLS + 6, 0, 1, LARGE, ' ');
+                printFrameBuffer();
+                Serial.println("");
+              }
+              shiftFrameBuffer();
+            }
+            LedMatrix_update();
           }
           LedMatrix_update();
         }
       }
       scroll = false;
+      Serial.println("no scroll");
     }
   }
   else
@@ -226,7 +243,7 @@ void loop() {
     switch (fdMode)
     {
       case 1:
-        printNews();
+        //printNews();
         break;
       default:
         break;
@@ -237,13 +254,15 @@ void loop() {
 
 void scrollText(String str)
 {
-  strcpy(textBuf, str.c_str());
   textBufLen = str.length();
-  i = printString(0, 0, ON, LARGE, str );
-  printFrameBuffer();
-  xoff = textBufLen * 6;
-  scrollDelay = 100;
-  scroll = true;
+  if (textBufLen < TXT_BUF_SIZ)
+  {
+    strcpy(textBuf, str.c_str());
+    i = printString(0, 0, ON, LARGE, str );
+    printFrameBuffer();
+    scrollDelay = 100;
+    scroll = true;
+  }
 }
 
 void printNews() {
@@ -366,7 +385,6 @@ void printTest(int m) {
     strcpy(textBuf, "@roboterfreak");
     i = printString(0, 0, ON, LARGE, textBuf );
     textBufLen = 24;
-    xoff = textBufLen * 6;
     scrollDelay = 100;
     scroll = true;
   }

@@ -9,7 +9,7 @@
 #include "font5x7.h"
 
 //================== Constants ===============================
-#define X_SIZE MTX_COLS    // 115 column
+#define X_SIZE MTX_COLS    // 150 column
 #define Y_SIZE MTX_ROWS     // 7 rows 
 #define OFF 0
 #define ON 1
@@ -17,7 +17,7 @@
 //================ global Variables ==========================
 // frameBuffer stores the content of the Flipdotmatrix
 // Each pixel is one bit (I.e only an eigth of storage is required
-unsigned char frameBuffer[X_SIZE];
+unsigned char frameBuffer[X_SIZE+16];
 
 
 //#################### Public Functions ####################################
@@ -32,7 +32,7 @@ void clearFrameBuffer(int color) {
   int i, j;
 
   Serial.println("C");
-  for (i = 0; i < X_SIZE; i++) {
+  for (i = 0; i < (X_SIZE + 16); i++) {
     for (j = 0; j < Y_SIZE; j++) {
       setFrameBuffer(i, j, color);
     }
@@ -231,7 +231,7 @@ void setFrameBuffer(int x, int y, int value) {
   int yBitNo;
 
   w = 1;
-  if ((y < Y_SIZE) && (x < X_SIZE) && (x >= 0) && (y >= 0)) {
+  if ((y < Y_SIZE) && (x < (X_SIZE + 16)) && (x >= 0) && (y >= 0)) {
     yBitNo = y % 8;   // modulo division (residual) to select the bit in that byte
     w = w << yBitNo;
     if (value == ON) {
@@ -255,7 +255,7 @@ int getFrameBuffer(int x, int y) {
   int value = 0;
 
   w = 1;
-  if ((y < Y_SIZE) && (x < X_SIZE) && (x >= 0) && (y >= 0)) {
+  if ((y < Y_SIZE) && (x < (X_SIZE + 6)) && (x >= 0) && (y >= 0)) {
     yBitNo = y % 8;   // modulo division (residual) to select the bit in that byte
     w = w << yBitNo;
     if (frameBuffer[x] & w) value = 1; else value = 0;
@@ -266,7 +266,7 @@ int getFrameBuffer(int x, int y) {
 void shiftFrameBuffer(void) {
   unsigned char x;
   
-  for (x = 0; x < X_SIZE-1; x++) {
+  for (x = 0; x < X_SIZE+6; x++) {
     frameBuffer[x] = frameBuffer[x+1];
   }
   LedMatrix_copy(frameBuffer);
